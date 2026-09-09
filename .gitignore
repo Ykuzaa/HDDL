@@ -1,0 +1,19 @@
+.DS_Store
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv
+.tf_venv
+.venv_tf
+.tf_test*
+imports.py
+
+# Data
+data/
+
+# My solutions files
+autoencoders_vae/vae/utils.py
+
+# saved models
+transformers/distilgpt2-finetuned-wikitext2
+transformers/gpt2

@@ -1,0 +1,5 @@
+print("Document:")
+print(raw_dataset['train'][0]['dialogue'])
+print("")
+print("Summary:")
+print(raw_dataset['train'][0]['summary'])
