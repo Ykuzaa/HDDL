@@ -1,43 +1,30 @@
-opt = Adam(learning_rate=3e-4)
-model = create_model_localization()
+model = LocalizationNetVGG(make_conv_base()).to(device)
 batch_size = 18
-epochs = 30
+epochs = 10
 
-loss = ['binary_crossentropy', 'mse', 'categorical_crossentropy']
-metrics = ['accuracy', iou(), 'accuracy']
-loss_weights = [1, 5, 1]
+loss_weights = {'p': 1, 'coord': 5, 'classes': 1}
 
-train_gen = WildLifeSequence(x_train, y_train, batch_size, augmentations=AUGMENTATIONS_TRAIN)
-valid_gen = WildLifeSequence(x_val, y_val, batch_size, augmentations=AUGMENTATIONS_TEST)
+train_loader = DataLoader(WildLifeDataset(x_train, y_train, transform=AUGMENTATIONS_TRAIN),
+                          batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(WildLifeDataset(x_val, y_val, transform=None),
+                        batch_size=batch_size, shuffle=False)
+
+# --- #
+
+print("Transfer learning")
+for parameter in model.conv_base.parameters():
+    parameter.requires_grad = False
+
+optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=3e-4)
+history = fit_localization(model, train_loader, val_loader, optimizer,
+                           losses, loss_weights, epochs)
 
 # --- #
 
-print("Transfert Learning")
-conv_base.trainable = False
-opt = Adam(learning_rate=3e-4)
-model.compile(loss = loss,
-              optimizer = opt,
-              metrics = metrics,
-              loss_weights = loss_weights)
+print("\nFine tuning")
+for parameter in model.conv_base.parameters():
+    parameter.requires_grad = True
 
-history = model.fit(train_gen,
-              epochs = epochs,
-              batch_size = batch_size,
-              validation_data = valid_gen)
-
-# --- #
-print("\n")
-# --- #
-
-print("Fine tuning")
-conv_base.trainable = True
-opt = Adam(learning_rate=1e-6)
-model.compile(loss = loss,
-              optimizer = opt,
-              metrics = metrics,
-              loss_weights = loss_weights)
-
-history = model.fit(train_gen,
-              epochs = epochs,
-              batch_size = batch_size,
-              validation_data = valid_gen)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+history = fit_localization(model, train_loader, val_loader, optimizer,
+                           losses, loss_weights, epochs)

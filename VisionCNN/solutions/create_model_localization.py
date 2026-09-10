@@ -1,31 +1,45 @@
-def create_model_localization(input_shape=(64, 64, 3)):
+class LocalizationNet(nn.Module):
 
-    input_layer = Input(shape=input_shape)
+    def __init__(self, image_size=IMAGE_SIZE):
+        super().__init__()
 
-    conv1 = Conv2D(32, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(input_layer)
-    conv1 = Conv2D(32, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
-    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 32, 3, padding='same'),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, 3, padding='same'),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
 
-    conv2 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+            nn.Conv2d(32, 64, 3, padding='same'),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding='same'),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
 
-    conv3 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+            nn.Conv2d(64, 128, 3, padding='same'),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, 3, padding='same'),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
 
-    conv4 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
-    conv4 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
-    drop4 = Dropout(0.5)(conv4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+            nn.Conv2d(128, 256, 3, padding='same'),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, 3, padding='same'),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.MaxPool2d(2),
+        )
 
-    x = Flatten()(pool4)
+        # Four MaxPool2d(2): the spatial size is divided by 16, with 256 channels
+        n_features = 256 * (image_size // 16) ** 2
 
-    output_p     = Dense(1, activation='sigmoid', name='p')(x)       # Output characterizing the presence of an object
-    output_coord = Dense(4, activation='linear', name='coord')(x)    # Output characterizing bounding box coordinates
-    output_class = Dense(4, activation='softmax', name='classes')(x) # Output characterizing the class probabilities
+        self.head_p = nn.Linear(n_features, 1)       # Output characterizing the presence of an object
+        self.head_coord = nn.Linear(n_features, 4)   # Output characterizing bounding box coordinates
+        self.head_classes = nn.Linear(n_features, 4) # Output characterizing the class probabilities
 
-    output = [output_p, output_coord, output_class]
-    model  = Model(input_layer, output)
+        self.apply(init_he_normal)
 
-    return model
+    def forward(self, x):
+        # Flatten everything but the batch axis: (N, C, H, W) -> (N, C*H*W)
+        f = torch.flatten(self.features(x), 1)
+        return self.head_p(f), self.head_coord(f), self.head_classes(f)

@@ -1,18 +1,27 @@
 epochs = 30
 batch_size = 15
-model = create_model_localization()
-opt = Adam(learning_rate=3e-4)
 
-loss = ['mse', 'mse', 'mse']
-metrics = ['accuracy', iou(), 'accuracy']
-loss_weights = [1, 1, 1]
+model = LocalizationNet().to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
-model.compile(loss = loss,
-              optimizer = opt,
-              metrics = metrics,
-              loss_weights = loss_weights)
+train_loader, val_loader = make_loaders(x_train, y_train, x_val, y_val, batch_size)
 
-history = model.fit(x_train, [y_train[:,0], y_train[:,1:5], y_train[:,5:9]],
-              epochs = epochs,
-              batch_size = batch_size,
-              validation_data = (x_val, [y_val[:,0], y_val[:,1:5], y_val[:,5:9]]))
+# Same three outputs, but every loss is now a mean square error
+def presence_loss_mse(pred, target, presence):
+    return F.mse_loss(torch.sigmoid(pred), target)
+
+
+def coord_loss_mse(pred, target, presence):
+    return F.mse_loss(pred, target)
+
+
+def class_loss_mse(pred, target, presence):
+    return F.mse_loss(torch.softmax(pred, dim=1), target)
+
+
+losses_mse = {'p': presence_loss_mse, 'coord': coord_loss_mse, 'classes': class_loss_mse}
+
+loss_weights = {'p': 1, 'coord': 1, 'classes': 1}
+
+history = fit_localization(model, train_loader, val_loader, optimizer,
+                           losses_mse, loss_weights, epochs)

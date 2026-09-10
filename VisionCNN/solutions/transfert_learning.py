@@ -1,40 +1,27 @@
-opt = Adam(learning_rate=3e-4)
-model = create_model_localization_VGG()
+model = LocalizationNetVGG(make_conv_base()).to(device)
 batch_size = 18
 epochs = 30
 
-loss = ['binary_crossentropy', 'mse', 'categorical_crossentropy']
-metrics = ['accuracy', iou(), 'accuracy']
-loss_weights = [1, 5, 1]
+loss_weights = {'p': 1, 'coord': 5, 'classes': 1}
+
+train_loader, val_loader = make_loaders(x_train, y_train, x_val, y_val, batch_size)
 
 # --- #
 
-print("Transfert Learning")
-conv_base.trainable = False
-opt = Adam(learning_rate=3e-4)
-model.compile(loss = loss,
-              optimizer = opt,
-              metrics = metrics,
-              loss_weights = loss_weights)
+print("Transfer learning")
+for parameter in model.conv_base.parameters():
+    parameter.requires_grad = False
 
-history = model.fit(x_train, [y_train[:,0], y_train[:,1:5], y_train[:,5:9]],
-              epochs = epochs,
-              batch_size = batch_size,
-              validation_data = (x_val, [y_val[:,0], y_val[:,1:5], y_val[:,5:9]]))
+optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=3e-4)
+history = fit_localization(model, train_loader, val_loader, optimizer,
+                           losses, loss_weights, epochs)
 
 # --- #
-print("\n")
-# --- #
 
-print("Fine tuning")
-conv_base.trainable = True
-opt = Adam(learning_rate=1e-6)
-model.compile(loss = loss,
-              optimizer = opt,
-              metrics = metrics,
-              loss_weights = loss_weights)
+print("\nFine tuning")
+for parameter in model.conv_base.parameters():
+    parameter.requires_grad = True
 
-history = model.fit(x_train, [y_train[:,0], y_train[:,1:5], y_train[:,5:9]],
-              epochs = epochs,
-              batch_size = batch_size,
-              validation_data = (x_val, [y_val[:,0], y_val[:,1:5], y_val[:,5:9]]))
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+history = fit_localization(model, train_loader, val_loader, optimizer,
+                           losses, loss_weights, epochs)

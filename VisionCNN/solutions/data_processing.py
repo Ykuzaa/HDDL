@@ -1,11 +1,12 @@
-x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, random_state=42)
+(x_train, y_train), (x_val, y_val), (x_test, y_test) = split_dataset(x, y, groups)
 
-# To improve the training, we can center-reduce the coordinates of the bounding boxes
-y_std = np.std(y_train, axis=0)
-y_mean = np.mean(y_train, axis=0)
-y_train[:,1:5] = (y_train[:,1:5] - y_mean[1:5])/y_std[1:5]
-y_val[:,1:5] = (y_val[:,1:5] - y_mean[1:5])/y_std[1:5]
+# Statistics of the boxes, computed on the training images containing an object
+present = y_train[:, 0] == 1
+y_mean = y_train[present].mean(axis=0)
+y_std = y_train[present].std(axis=0)
 
-# And normalize the color values
-x_train = x_train/255
-x_val = x_val/255
+# Center-reduce the coordinates of the three sets
+for y_set in (y_train, y_val, y_test):
+    y_set[:, 1:5] = (y_set[:, 1:5] - y_mean[1:5]) / y_std[1:5]
+
+x_train.shape, x_val.shape, x_test.shape

@@ -1,29 +1,37 @@
-def create_model_YOLO(input_shape=(64, 64, 3)):
-    weight_decay = 0
+class YOLONet(nn.Module):
 
-    input_layer = Input(shape=input_shape)
+    def __init__(self, image_size=IMAGE_SIZE):
+        super().__init__()
 
-    conv1 = Conv2D(32, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(input_layer)
-    conv1 = Conv2D(32, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
-    conv1 = Conv2D(32, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
-    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 32, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(32, 32, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(32, 32, 3, padding='same'), nn.ELU(),
+            nn.MaxPool2d(2),
 
-    conv2 = Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
-    conv2 = Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
-    conv2 = Conv2D(64, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+            nn.Conv2d(32, 64, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(64, 64, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(64, 64, 3, padding='same'), nn.ELU(),
+            nn.MaxPool2d(2),
 
-    conv3 = Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
-    conv3 = Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
-    conv3 = Conv2D(128, 3, activation = 'elu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+            nn.Conv2d(64, 128, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(128, 128, 3, padding='same'), nn.ELU(),
+            nn.Conv2d(128, 128, 3, padding='same'), nn.ELU(),
+            nn.MaxPool2d(2),
+        )
 
-    dense4 = Flatten()(pool3)
-    dense4 = Dense(512, activation='elu',kernel_regularizer=regularizers.l2(weight_decay))(dense4)
-    dense5 = Dense(512, activation='elu',kernel_regularizer=regularizers.l2(weight_decay))(dense4)
-    output = Dense(CELL_PER_DIM*CELL_PER_DIM*(NB_CLASSES + 5*BOX_PER_CELL), activation='linear',kernel_regularizer=regularizers.l2(weight_decay))(dense5)
-    output = Reshape((CELL_PER_DIM, CELL_PER_DIM, NB_CLASSES + 5*BOX_PER_CELL))(output)
+        # Three MaxPool2d(2): the spatial size is divided by 8, with 128 channels
+        n_features = 128 * (image_size // 8) ** 2
 
-    model = Model(input_layer, output)
+        self.classifier = nn.Sequential(
+            nn.Linear(n_features, 512), nn.ELU(),
+            nn.Linear(512, 512), nn.ELU(),
+            nn.Linear(512, CELL_PER_DIM * CELL_PER_DIM * (NB_CLASSES + 5*BOX_PER_CELL)),
+        )
 
-    return model
+        self.apply(init_he_normal)
+
+    def forward(self, x):
+        f = torch.flatten(self.features(x), 1)
+        output = self.classifier(f)
+        return output.view(-1, CELL_PER_DIM, CELL_PER_DIM, NB_CLASSES + 5*BOX_PER_CELL)
