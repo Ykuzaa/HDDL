@@ -34,11 +34,14 @@ _Goal:_ Objects localization and detection through CNNs. Implementation of a sim
 * Generative Adversarial Networks (GAN)
 * Self-Supervised Learning (SSL)
 
-**TP - [Autoencoders & Variational Autoencoders](Autoencoders_VAE/)** <br>
-_Goal:_ Manipulate autoencoders and variational autoencoders on the `MNIST` database, with a focus on the notion of latent space.
+**TP - [Autoencoders](AE-VAE/)** <br>
+_Goal:_ Manipulate autoencoders (AE) on the `MNIST` database, with a focus on the notion of latent space.
 
-**TP - TBA** - ... <br>
-_Goal:_ ...
+**TP - [GAN](GAN/)** <br>
+_Goal:_ Manipulate generative adversarial network (GAN) on the `MNIST` database, with a focus on the training.
+
+**TP - [Variational Autoencoders](AE-VAE/)** <br>
+_Goal:_ Manipulate variational autoencoders (VAE) on the `MNIST` database, with a focus on the notion of latent space.
 
 **TP - TBA** - ... <br>
 _Goal:_ ...
