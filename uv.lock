@@ -117,12 +117,6 @@ wheels = [
 ]
 
 [[package]]
-name = "annoy"
-version = "1.17.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/07/38/e321b0e05d8cc068a594279fb7c097efb1df66231c295d482d7ad51b6473/annoy-1.17.3.tar.gz", hash = "sha256:9cbfebefe0a5f843eba29c6be4c84d601f4f41ad4ded0486f1b88c3b07739c15", size = 647460, upload-time = "2023-06-14T16:37:34.152Z" }
-
-[[package]]
 name = "anyio"
 version = "4.15.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1393,7 +1387,6 @@ dev = [
     { name = "nbformat" },
 ]
 llm = [
-    { name = "annoy" },
     { name = "sentence-transformers" },
     { name = "transformers" },
 ]
@@ -1435,7 +1428,6 @@ dev = [
 ]
 gnn = []
 llm = [
-    { name = "annoy" },
     { name = "sentence-transformers" },
     { name = "transformers", specifier = ">=4.53" },
 ]
