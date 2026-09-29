@@ -1,7 +1,6 @@
 class Embedding(nn.Module):
   def __init__(self, vocab_size, max_length, hidden_dim):
     super().__init__()
-    # TODO: use the nn.Embedding layer to initialize the embedding and positional encoding below:
     self.embedding = nn.Embedding(vocab_size, hidden_dim)
     self.position_encoding = nn.Embedding(max_length, hidden_dim)
 

@@ -30,16 +30,16 @@ rnn = []
 gnn = []
 
 transformers = [
-#    "transformers",
-#    "datasets",
-#    "evaluate",
-#    "tokenizers",
-#    "accelerate",
-#    "sentencepiece",
+    "datasets",
+    "evaluate",
+    "sacrebleu",
+    "accelerate",
 ]
 
 llm = [
     "sentence-transformers",
+    "transformers>=4.53",
+    "annoy",
 ]
 
 dev = [
